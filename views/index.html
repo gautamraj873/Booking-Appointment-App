@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Form</title>
+</head>
+<body>
+    <h1>Booking Appointment App</h1>
+    <div>
+        <div>
+            <label for="">User Name</label>
+            <input type="text" id="userName" name="userName">
+        </div>
+        <div>
+            <label for="">Phone Number</label>
+            <input type="text" id="phoneNumber" name="phoneNumber">
+        </div>
+        <div>
+            <label for="">Email</label><br>
+            <input type="text" id="email" name="email">
+        </div>
+        <button type="submit" id="buttonInsert" onclick="handleInsertUser(event)">Submit</button>
+    </div>
+
+    <div id="bookingList">
+        <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">id</th>
+                <th scope="col">UserName</th>
+                <th scope="col">PhoneNumber</th>
+                <th scope="col">Email</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody id="userData"></tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            axios.get('http://localhost:5000/user')
+                .then(response => {
+                    const userData = response.data;
+                    const tableBody = document.getElementById('userData');
+                    let tableHTML = '';
+
+                    if (Array.isArray(userData)) {
+                        userData.forEach(user => {
+                            tableHTML += `
+                                <tr id="row-id-${user.id}">
+                                    <td>${user.id}</td>
+                                    <td>${user.userName}</td>
+                                    <td>${user.phoneNumber}</td>
+                                    <td>${user.email}</td>
+                                    <td>
+                                        <button type="button" onclick="handleEdit('${user.id}')">Edit</button>
+                                        <button type="button" onclick="handleDelete('${user.id}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    }
+
+                    tableBody.innerHTML = tableHTML;
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+        });
+
+        const handleEdit = (userId) => {
+            const userName = document.getElementById("userName");
+            const phoneNumber = document.getElementById("phoneNumber");
+            const email = document.getElementById("email");
+
+            axios.get(`http://localhost:5000/user/${userId}`)
+                .then(response => {
+                    const user = response.data;
+
+                    if (user) {
+                        userName.value = user.userName;
+                        phoneNumber.value = user.phoneNumber;
+                        email.value = user.email;
+                    }
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        };
+
+        const handleInsertUser = (event) => {
+            event.preventDefault();
+            const userData = {
+                userName: document.getElementById("userName").value,
+                phoneNumber: document.getElementById("phoneNumber").value,
+                email: document.getElementById("email").value
+            };
+
+            axios.post('http://localhost:5000/user', userData)
+                .then(response => {
+                    const newUser = response.data;
+                    const tableBody = document.getElementById('userData');
+
+                    const newRow = document.createElement('tr');
+                    newRow.id = `row-id-${newUser.id}`;
+                    newRow.innerHTML = `
+                        <td>${newUser.id}</td>
+                        <td>${newUser.userName}</td>
+                        <td>${newUser.phoneNumber}</td>
+                        <td>${newUser.email}</td>
+                        <td>
+                            <button type="button" onclick="handleEdit('${newUser.id}')">Edit</button>
+                            <button type="button" onclick="handleDelete('${newUser.id}')">Delete</button>
+                        </td>
+                    `;
+
+                    tableBody.appendChild(newRow);
+
+                    // Clear input fields
+                    document.getElementById("userName").value = '';
+                    document.getElementById("phoneNumber").value = '';
+                    document.getElementById("email").value = '';
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        };
+
+        const handleSubmitEdit = (userId) => {
+            const userData = {
+                userName: document.getElementById("userName").value,
+                phoneNumber: document.getElementById("phoneNumber").value,
+                email: document.getElementById("email").value
+            };
+
+            axios.put(`http://localhost:5000/user/${userId}`, userData)
+                .then(() => {
+                    const editedRow = document.getElementById(`row-id-${userId}`);
+
+                    if (editedRow) {
+                        editedRow.children[1].textContent = userData.userName;
+                        editedRow.children[2].textContent = userData.phoneNumber;
+                        editedRow.children[3].textContent = userData.email;
+                    }
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        };
+
+        const handleDelete = (userId) => {
+            if (confirm('Are you sure?')) {
+                axios.delete(`http://localhost:5000/user/${userId}`)
+                    .then(() => {
+                        const deletedRow = document.getElementById(`row-id-${userId}`);
+                        if (deletedRow) {
+                            deletedRow.remove();
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                    });
+            }
+        };
+    </script>
+</body>
+</html>
+y
